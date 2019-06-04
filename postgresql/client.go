@@ -136,18 +136,24 @@ func (c *Client) setupPgPrometheus() error {
 
 	defer tx.Rollback()
 
-	_, err = tx.Exec("CREATE EXTENSION IF NOT EXISTS pg_prometheus")
-
 	if err != nil {
 		return err
 	}
 
 	if c.cfg.useTimescaleDb {
-		_, err = tx.Exec("CREATE EXTENSION IF NOT EXISTS timescaledb CASCADE")
+		_, err = tx.Exec("CREATE EXTENSION IF NOT EXISTS timescaledb")
 	}
 	if err != nil {
-		log.Info("msg", "Could not enable TimescaleDB extension", "err", err)
+		log.Info("msg", "Could not enable timescaledb extension", "err", err)
 	}
+
+	if c.cfg.useTimescaleDb {
+		_, err = tx.Exec("CREATE EXTENSION IF NOT EXISTS pg_prometheus")
+	}
+	if err != nil {
+		log.Info("msg", "Could not enable pg_prometheus extension", "err", err)
+	}
+
 
 	var rows *sql.Rows
 	rows, err = tx.Query("SELECT create_prometheus_table($1, normalized_tables => $2, chunk_time_interval => $3,  use_timescaledb=> $4)",
